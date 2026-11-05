@@ -3,8 +3,52 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 
+#include <map>
+#include <functional>
+
+#include "socket_helper.hpp"
+#include "get_handler.hpp"
+
+// Tracker Server-ONLY handlers
+
+void create_tracker_handler(int connfd, const std::vector<std::string>& args) {
+    // TODO implement create_tracker_handler
+}
+
+void update_tracker_handler(int connfd, const std::vector<std::string>& args) {
+    // TODO implement update_tracker_handler
+}
+
+void list_handler(int connfd, const std::vector<std::string>& args) {
+    // TODO implement list_handler
+}
+
+// Handlers for each request
+static const std::map<std::string, std::function<void(int, const std::vector<std::string>&)>> handlers = {
+    {"createtracker", create_tracker_handler},
+    {"updatetracker", update_tracker_handler},
+    {"REQ", list_handler},
+    {"GET", get_handler}
+};
+
 static void handle_request(int connfd) {
+    socket_reader reader(connfd);
+    std::string line;
+    reader.read_line(line);
+
+    std::vector<std::string> args = split_string(line, ' ');
+    if (args.empty()) {
+        std::cerr << "Empty request received" << std::endl;
+        return;
+    }
     
+    auto it = handlers.find(args[0]);
+    if (it == handlers.end()) {
+        std::cerr << "Unknown request: " << args[0] << std::endl;
+        return;
+    }
+
+    it->second(connfd, args);
 }
 
 int main() {
@@ -23,7 +67,7 @@ int main() {
     sockaddr_in addr {};
     addr.sin_family = AF_INET;
     addr.sin_port = htons(port);
-    if (inet_aton(ip_addr.c_str(), &addr.sin_addr)) {
+    if (!inet_aton(ip_addr.c_str(), &addr.sin_addr)) {
         std::cerr << "Invalid IP address given" << std::endl;
         return 1;
     }
