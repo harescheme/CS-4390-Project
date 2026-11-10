@@ -1,5 +1,5 @@
-#ifndef SOCKET_HELPER
-#define SOCKET_HELPER
+#ifndef SOCKET_HELPER_H
+#define SOCKET_HELPER_H
 
 #include <iostream>
 #include <sstream>
@@ -8,6 +8,8 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <sys/socket.h> 
+
+#include "utils.hpp"
 
 // Utilities to help with reading from sockets
 
@@ -25,6 +27,18 @@ public:
     int refresh_buffer();
 };
 
-std::vector<std::string> split_string(const std::string& str, char delimiter);
+class socket_writer {
+    int connfd;
+    std::stringstream buffer;
+
+public:
+    socket_writer(int connfd);
+    template <typename T>
+    socket_writer& operator<<(const T& data) {
+        buffer << data;
+        return *this;
+    }
+    int flush();
+};
 
 #endif

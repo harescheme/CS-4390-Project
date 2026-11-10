@@ -13,6 +13,12 @@
 
 void create_tracker_handler(int connfd, const std::vector<std::string>& args) {
     // TODO implement create_tracker_handler
+    if (args.size() < 7) {
+        std::cerr << "Invalid number of arguments for createtracker" << std::endl;
+        return;
+    }
+
+    
 }
 
 void update_tracker_handler(int connfd, const std::vector<std::string>& args) {

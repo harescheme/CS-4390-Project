@@ -1,5 +1,5 @@
-#ifndef GET_HANDLER
-#define GET_HANDLER
+#ifndef GET_HANDLER_H
+#define GET_HANDLER_H
 
 #include "socket_helper.hpp"
 

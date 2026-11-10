@@ -32,13 +32,21 @@ int socket_reader::refresh_buffer() {
     return buffer_bytes;
 }
 
-// Self explanatory, splits a string by a delimiter
-std::vector<std::string> split_string(const std::string& str, char delimiter) {
-    std::vector<std::string> tokens;
-    std::stringstream ss(str);
-    std::string token;
-    while (std::getline(ss, token, delimiter)) {
-        tokens.push_back(token);
+
+socket_writer::socket_writer(int connfd) : connfd(connfd) {}
+
+// Flushes the internal buffer after appending data using the << operator.
+// Returns 0 on success, < 0 for error
+int socket_writer::flush() {
+    std::string data = buffer.str();
+    ssize_t bytes_sent = send(connfd, data.c_str(), data.size(), 0);
+    if (bytes_sent < 0) {
+        std::cerr << "Error writing to socket" << std::endl;
+        return bytes_sent;
     }
-    return tokens;
+
+    // Clear the buffer after sending
+    buffer.str("");
+    buffer.clear();
+    return 0;
 }
