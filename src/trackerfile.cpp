@@ -1,9 +1,12 @@
 #include "trackerfile.hpp"
 
 std::set<std::string> valid_keys {"Filename", "Filesize", "Description", "MD5"};
+const fs::path tracker_dir = "tracker_files";
 
 bool read_tracker_file(const std::string& filename, tracker_file& tfile) {
-    std::ifstream file(filename);
+    std::string tracker_file_name = filename + ".track";
+    fs::path filepath = tracker_dir / tracker_file_name;
+    std::ifstream file(filepath);
     if (!file.is_open()) {
         std::cerr << "Failed to open tracker file: " << filename << std::endl;
         return false;
@@ -111,24 +114,49 @@ bool parse_peer_line(const std::string& line, peer_tracker_file& peer) {
     return true;
 }
 
+// Converts a tracker file struct to a string representation
+std::string tracker_file_to_string(const tracker_file& tfile) {
+    std::stringstream ss;
+    ss << "Filename: " << tfile.filename << '\n';
+    ss << "Filesize: " << tfile.filesize << '\n';
+    ss << "Description: " << tfile.description << '\n';
+    ss << "MD5: " << tfile.md5 << '\n';
+
+    for (const auto& peer : tfile.peers) {
+        char ip_str[INET_ADDRSTRLEN];
+        inet_ntop(AF_INET, &peer.ip_address, ip_str, sizeof(ip_str));
+        ss << ip_str << ":" << peer.port << ":" << peer.start_byte
+           << ":" << peer.end_byte << ":" << peer.timestamp << "\n";
+    }
+
+    return ss.str();
+}
+
+// Writes a tracker file struct to a file using its string representation
 bool write_tracker_file(const std::string& filename, const tracker_file& tfile) {
-    std::ofstream file(filename);
+    std::string tracker_file_name = filename + ".track";
+    fs::path filepath = tracker_dir / tracker_file_name;
+    std::ofstream file(filepath);
     if (!file.is_open()) {
         std::cerr << "Failed to open tracker file for writing: " << filename << std::endl;
         return false;
     }
 
-    file << "Filename: " << tfile.filename << "\n";
-    file << "Filesize: " << tfile.filesize << "\n";
-    file << "Description: " << tfile.description << "\n";
-    file << "MD5: " << tfile.md5 << "\n";
-
-    for (const auto& peer : tfile.peers) {
-        char ip_str[INET_ADDRSTRLEN];
-        inet_ntop(AF_INET, &peer.ip_address, ip_str, sizeof(ip_str));
-        file << ip_str << ":" << peer.port << ":" << peer.start_byte
-             << ":" << peer.end_byte << ":" << peer.timestamp << "\n";
-    }
+    file << tracker_file_to_string(tfile);
 
     return true;
+}
+
+// Lists all tracker files available on the server. Could consider caching in memory, but this project is simple enough.
+std::vector<tracker_file> list_tracker_files() {
+    std::vector<tracker_file> files;
+    for (const auto& entry : fs::directory_iterator(tracker_dir)) {
+        if (entry.is_regular_file() && entry.path().extension() == ".track") {
+            tracker_file tfile;
+            if (read_tracker_file(entry.path().filename().string(), tfile)) {
+                files.push_back(tfile);
+            }
+        }
+    }
+    return files;
 }

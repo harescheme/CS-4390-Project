@@ -8,6 +8,7 @@
 #include <sys/socket.h>
 
 #include "socket_helper.hpp"
+#include "trackerfile.hpp"
 
 // Tracker Server-ONLY handlers
 
@@ -18,6 +19,8 @@ void create_tracker_handler(int connfd, const std::vector<std::string>& args) {
         return;
     }
 
+    // socket_writer writer(connfd);
+    // tracker_file tfile;
     
 }
 
@@ -27,10 +30,48 @@ void update_tracker_handler(int connfd, const std::vector<std::string>& args) {
 
 void list_handler(int connfd, const std::vector<std::string>& args) {
     // TODO implement list_handler
+    if (args.size() < 2 || args[1] != "LIST") {
+        std::cerr << "Invalid request for LIST" << std::endl;
+        return;
+    }
+
+    socket_writer writer(connfd);
+    std::vector<tracker_file> tracker_files = list_tracker_files();
+    
+    writer << "REP LIST " << tracker_files.size() << '\n';
+    int index = 1;
+    for (const auto& tfile : tracker_files) {
+        writer << index << ' ' << tfile.filename << ' ' << tfile.filesize << ' ' << tfile.md5 << '\n';
+        index++;
+    }
+
+    writer << "REP LIST END\n";
+    if (writer.flush()) {
+        std::cerr << "Failed to send response" << std::endl;
+    }
 }
 
 void get_handler(int connfd, const std::vector<std::string>& args) {
     // TODO implement get_handler
+    if (args.size() < 2) {
+        std::cerr << "Invalid number of arguments for GET" << std::endl;
+        return;
+    }
+
+    socket_writer writer(connfd);
+    writer << "REP GET BEGIN\n";
+    tracker_file tfile;
+    if (!read_tracker_file(args[1], tfile)) {
+        std::cerr << "Failed to read tracker file: " << args[1] << std::endl;
+        return;
+    }
+
+    std::string tfile_str = tracker_file_to_string(tfile);
+    writer << tfile_str;
+    writer << "REP GET END " << md5(tfile_str) << "\n";
+    if (writer.flush()) {
+        std::cerr << "Failed to send response" << std::endl;
+    }
 }
 
 // Handlers for each request

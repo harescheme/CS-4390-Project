@@ -39,10 +39,14 @@ socket_writer::socket_writer(int connfd) : connfd(connfd) {}
 // Returns 0 on success, < 0 for error
 int socket_writer::flush() {
     std::string data = buffer.str();
-    ssize_t bytes_sent = send(connfd, data.c_str(), data.size(), 0);
-    if (bytes_sent < 0) {
-        std::cerr << "Error writing to socket" << std::endl;
-        return bytes_sent;
+    ssize_t total_bytes_sent = 0;
+    while (total_bytes_sent < data.size()) {
+        ssize_t bytes_sent = send(connfd, data.c_str() + total_bytes_sent, data.size() - total_bytes_sent, 0);
+        if (bytes_sent < 0) {
+            std::cerr << "Error writing to socket" << std::endl;
+            return bytes_sent;
+        }
+        total_bytes_sent += bytes_sent;
     }
 
     // Clear the buffer after sending
