@@ -33,6 +33,7 @@ class socket_writer {
 
 public:
     socket_writer(int connfd);
+
     template <typename T>
     socket_writer& operator<<(const T& data) {
         buffer << data;

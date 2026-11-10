@@ -1,13 +1,13 @@
 #include <iostream>
+#include <map>
+#include <functional>
+#include <thread>
+
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
 
-#include <map>
-#include <functional>
-
 #include "socket_helper.hpp"
-#include "get_handler.hpp"
 
 // Tracker Server-ONLY handlers
 
@@ -27,6 +27,10 @@ void update_tracker_handler(int connfd, const std::vector<std::string>& args) {
 
 void list_handler(int connfd, const std::vector<std::string>& args) {
     // TODO implement list_handler
+}
+
+void get_handler(int connfd, const std::vector<std::string>& args) {
+    // TODO implement get_handler
 }
 
 // Handlers for each request
@@ -65,6 +69,10 @@ int main() {
     // socket
     // SOCK_STREAM is TCP, SOCK_DGRAM is UDP
     int fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (fd < 0) {
+        std::cerr << "socket() failed" << std::endl;
+        return 1;
+    }
 
     // bind
     int opt = 1;
@@ -102,6 +110,7 @@ int main() {
         }
 
         // child process
+        // TODO switch to std::thread
         if (fork() == 0) {
             close(fd);  //child does not need listener
             handle_request(connfd);

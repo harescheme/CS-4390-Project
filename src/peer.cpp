@@ -1,28 +1,49 @@
+#include <iostream>
+#include <thread>
 
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <sys/types.h>
+#include <unistd.h>
+#include <arpa/inet.h>
 #include <sys/socket.h>
-#include <netinet/in.h>
+
+#include "socket_helper.hpp"
+
+// Downloads a file given the tracker file.
+void download_file(int connfd /*, some other parameters */) {
+	// TODO implement, set parameters
+}
 
 int main(int argc, char *argv[]) {
-   	char server_address[50];
-	int server_port=3490;  // you should instead read from configuration file
+   	// TODO change to configuration file
+	// Address of tracker server
+    int port = 3490;
+    std::string ip_addr = "0.0.0.0";
 
-	struct sockaddr_in server_addr;
-	int sockid;
-
-	if ((sockid = socket(AF_INET, SOCK_STREAM, 0)) == -1) { //create socket
-		printf("socket cannot be created\n"); exit(0);
+    // socket
+    // SOCK_STREAM is TCP, SOCK_DGRAM is UDP
+    int fd = socket(AF_INET, SOCK_STREAM, 0);
+	if (fd < 0) {
+		std::cerr << "socket() failed" << std::endl;
+		return 1;
 	}
 
+    // bind
+    int opt = 1;
+    // SO_REUSEADDR lets the program reuse IP:PORT after restart, should always be used
+    setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+    sockaddr_in addr {};
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(port);
+    if (!inet_aton(ip_addr.c_str(), &addr.sin_addr)) {
+        std::cerr << "Invalid IP address given" << std::endl;
+        return 1;
+    }
+    
+    // connect
+    if (connect(fd, (const sockaddr *) &addr, sizeof(addr))) {
+        std::cerr << "bind() failed" << std::endl;
+        return 1;
+    }
 
-    server_addr.sin_family = AF_INET;//host byte order
-    server_addr.sin_port = htons(server_port);// convert to network byte order
-    if (connect(sockid, (struct sockaddr *) &server_addr,sizeof(struct sockaddr))==-1){//connect and error check
-		printf("Cannot connect to server\n"); exit(0);
-	}
 
    /* If connected successfully*/
 
