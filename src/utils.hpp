@@ -1,6 +1,7 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#include <chrono>
 #include <iomanip>
 #include <sstream>
 #include <string>
@@ -48,6 +49,12 @@ std::string strip_brackets(std::string s) {
         s = s.substr(1, s.size() - 2);
     }
     return s;
+}
+
+long long current_timestamp() {
+    return std::chrono::duration_cast<std::chrono::seconds>(
+        std::chrono::system_clock::now().time_since_epoch()
+    ).count();
 }
 
 #endif

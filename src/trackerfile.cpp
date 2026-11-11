@@ -1,11 +1,12 @@
 #include "trackerfile.hpp"
 
-std::set<std::string> valid_keys {"Filename", "Filesize", "Description", "MD5"};
-const fs::path tracker_dir = "tracker_files";
+fs::path get_tracker_file_path(const std::string& filename) {
+    return tracker_dir / (filename + ".track");
+}
 
+// Reads a tracker file completely and populates the tracker_file struct. Returns true on success, false on failure.
 bool read_tracker_file(const std::string& filename, tracker_file& tfile) {
-    std::string tracker_file_name = filename + ".track";
-    fs::path filepath = tracker_dir / tracker_file_name;
+    fs::path filepath = get_tracker_file_path(filename);
     std::ifstream file(filepath);
     if (!file.is_open()) {
         std::cerr << "Failed to open tracker file: " << filename << std::endl;
@@ -73,6 +74,7 @@ bool read_tracker_file(const std::string& filename, tracker_file& tfile) {
     return true;
 }
 
+// Parses a peer line in the tracker file
 bool parse_peer_line(const std::string& line, peer_tracker_file& peer) {
     std::vector<std::string> tokens = split_string(line, ':');
     if (tokens.size() != 5) {
@@ -80,33 +82,22 @@ bool parse_peer_line(const std::string& line, peer_tracker_file& peer) {
         return false;
     }
 
-    if (!inet_aton(tokens[0].c_str(), &peer.ip_address)) {
+    if (!validate_ip_address(tokens[0], peer.ip_address)) {
         std::cerr << "Invalid IP address in peer line: " << tokens[0] << std::endl;
         return false;
     }
 
-    size_t index = 0;
-    int port = std::stoi(tokens[1], &index);
-    if (index != tokens[1].length() || port < 0 || port > 65535) {
+    if (!validate_port(tokens[1], peer.port)) {
         std::cerr << "Invalid port in peer line: " << tokens[1] << std::endl;
         return false;
     }
-    peer.port = static_cast<short>(port);
 
-    peer.start_byte = std::stoul(tokens[2], &index);
-    if (index != tokens[2].length()) {
-        std::cerr << "Invalid start byte in peer line: " << tokens[2] << std::endl;
+    if (!validate_start_end_bytes(tokens[2], tokens[3], peer.start_byte, peer.end_byte)) {
+        std::cerr << "Invalid start or end byte in peer line: " << tokens[2] << ", " << tokens[3] << std::endl;
         return false;
     }
 
-    peer.end_byte = std::stoul(tokens[3], &index);
-    if (index != tokens[3].length()) {
-        std::cerr << "Invalid end byte in peer line: " << tokens[3] << std::endl;
-        return false;
-    }
-
-    peer.timestamp = std::stoul(tokens[4], &index);
-    if (index != tokens[4].length()) {
+    if (!validate_timestamp(tokens[4], peer.timestamp)) {
         std::cerr << "Invalid timestamp in peer line: " << tokens[4] << std::endl;
         return false;
     }
@@ -134,8 +125,7 @@ std::string tracker_file_to_string(const tracker_file& tfile) {
 
 // Writes a tracker file struct to a file using its string representation
 bool write_tracker_file(const std::string& filename, const tracker_file& tfile) {
-    std::string tracker_file_name = filename + ".track";
-    fs::path filepath = tracker_dir / tracker_file_name;
+    fs::path filepath = get_tracker_file_path(filename);
     std::ofstream file(filepath);
     if (!file.is_open()) {
         std::cerr << "Failed to open tracker file for writing: " << filename << std::endl;
@@ -159,4 +149,59 @@ std::vector<tracker_file> list_tracker_files() {
         }
     }
     return files;
+}
+
+
+// Validation helper functions
+
+bool validate_filename(const std::string& filename) {
+    return !filename.empty() && filename.find_first_of("/\\") == std::string::npos;
+}
+
+bool validate_filesize(const std::string& filesize_str, size_t& filesize) {
+    try {
+        size_t index = 0;
+        filesize = std::stoul(filesize_str, &index);
+        return index == filesize_str.length();
+    } catch (...) {
+        return false;
+    }
+}
+
+bool validate_md5(const std::string& md5) {
+    return md5.length() == 32 && std::all_of(md5.begin(), md5.end(), ::isxdigit);
+}
+
+bool validate_ip_address(const std::string& ip_address_str, struct in_addr& ip_address) {
+    return inet_pton(AF_INET, ip_address_str.c_str(), &ip_address) == 1;
+}
+
+bool validate_port(const std::string& port_str, short& port) {
+    try {
+        size_t index = 0;
+        port = static_cast<short>(std::stoul(port_str, &index));
+        return index == port_str.length() && port >= 0 && port <= 65535;
+    } catch (...) {
+        return false;
+    }
+}
+
+bool validate_start_end_bytes(const std::string& start_str, const std::string& end_str, size_t& start_byte, size_t& end_byte) {
+    if (!validate_filesize(start_str, start_byte)) {
+        return false;
+    }
+    if (!validate_filesize(end_str, end_byte)) {
+        return false;
+    }
+    return start_byte <= end_byte;
+}
+
+bool validate_timestamp(const std::string& timestamp_str, size_t& timestamp) {
+    try {
+        size_t index = 0;
+        timestamp = std::stoul(timestamp_str, &index);
+        return index == timestamp_str.length();
+    } catch (...) {
+        return false;
+    }
 }
