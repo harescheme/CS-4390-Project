@@ -41,4 +41,13 @@ std::string md5(const std::string& str) {
     return ss.str();
 }
 
+// trim + strip angle brackets
+std::string strip_brackets(std::string s) {
+    s = trim(s);
+    if (s.size() >= 2 && s.front() == '<' && s.back() == '>') {
+        s = s.substr(1, s.size() - 2);
+    }
+    return s;
+}
+
 #endif

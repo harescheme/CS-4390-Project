@@ -38,14 +38,14 @@ void list_handler(int connfd, const std::vector<std::string>& args) {
     socket_writer writer(connfd);
     std::vector<tracker_file> tracker_files = list_tracker_files();
     
-    writer << "REP LIST " << tracker_files.size() << '\n';
+    writer << "<REP LIST " << tracker_files.size() << ">\n";
     int index = 1;
     for (const auto& tfile : tracker_files) {
         writer << index << ' ' << tfile.filename << ' ' << tfile.filesize << ' ' << tfile.md5 << '\n';
         index++;
     }
 
-    writer << "REP LIST END\n";
+    writer << "<REP LIST END>\n";
     if (writer.flush()) {
         std::cerr << "Failed to send response" << std::endl;
     }
@@ -59,7 +59,7 @@ void get_handler(int connfd, const std::vector<std::string>& args) {
     }
 
     socket_writer writer(connfd);
-    writer << "REP GET BEGIN\n";
+    writer << "<REP GET BEGIN>\n";
     tracker_file tfile;
     if (!read_tracker_file(args[1], tfile)) {
         std::cerr << "Failed to read tracker file: " << args[1] << std::endl;
@@ -68,7 +68,7 @@ void get_handler(int connfd, const std::vector<std::string>& args) {
 
     std::string tfile_str = tracker_file_to_string(tfile);
     writer << tfile_str;
-    writer << "REP GET END " << md5(tfile_str) << "\n";
+    writer << "<REP GET END " << md5(tfile_str) << ">\n";
     if (writer.flush()) {
         std::cerr << "Failed to send response" << std::endl;
     }
@@ -87,7 +87,7 @@ static void handle_request(int connfd) {
     std::string line;
     reader.read_line(line);
 
-    std::vector<std::string> args = split_string(line, ' ');
+    std::vector<std::string> args = split_string(strip_brackets(line), ' ');
     if (args.empty()) {
         std::cerr << "Empty request received" << std::endl;
         return;
