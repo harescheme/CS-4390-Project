@@ -74,9 +74,12 @@ void create_tracker_handler(int connfd, const std::vector<std::string>& args) {
         return;
     }
 
+    response_status status = create_tracker_handler_helper(args);
     socket_writer writer(connfd);
-    // tracker_file tfile;
-    
+    writer << "createtracker " << args[1] << ' ' << (status == SUCCESS ? "succ" : (status == FILE_ERROR ? "ferr" : "fail")) << '\n';
+    if (writer.flush()) {
+        std::cerr << "Failed to send response" << std::endl;
+    }
 }
 
 response_status update_tracker_handler_helper(const std::vector<std::string>& args) {
@@ -172,10 +175,15 @@ void get_handler(int connfd, const std::vector<std::string>& args) {
         return;
     }
 
+    if (args[1].size() < 6 || args[1].substr(args[1].size() - 6) != ".track") {
+        std::cerr << "Invalid tracker file name: " << args[1] << std::endl;
+        return;
+    }
+
     socket_writer writer(connfd);
-    writer << "<REP GET BEGIN>\n";
     tracker_file tfile;
-    if (!read_tracker_file(args[1], tfile)) {
+    writer << "<REP GET BEGIN>\n";
+    if (!read_tracker_file(args[1].substr(0, args[1].size() - 6), tfile)) {
         std::cerr << "Failed to read tracker file: " << args[1] << std::endl;
         return;
     }
@@ -200,6 +208,7 @@ static void handle_request(int connfd) {
     socket_reader reader(connfd);
     std::string line;
     reader.read_line(line);
+    std::cout << "Received " << line << std::endl;
 
     std::vector<std::string> args = split_string(strip_brackets(line), ' ');
     if (args.empty()) {
@@ -275,7 +284,8 @@ int main() {
         if (fork() == 0) {
             close(fd);  //child does not need listener
             handle_request(connfd);
-            close (connfd);
+            shutdown(connfd, SHUT_RDWR);  // shutdown the connection before closing
+            close(connfd);
             exit(0);    // kill the process. child process all done with work
         }
 

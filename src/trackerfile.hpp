@@ -15,7 +15,7 @@
 
 namespace fs = std::filesystem;
 
-std::set<std::string> valid_keys {"Filename", "Filesize", "Description", "MD5"};
+extern const std::set<std::string> valid_keys;
 const fs::path tracker_dir = "tracker_files";
 
 struct peer_tracker_file {

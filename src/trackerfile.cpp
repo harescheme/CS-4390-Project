@@ -1,5 +1,7 @@
 #include "trackerfile.hpp"
 
+const std::set<std::string> valid_keys {"Filename", "Filesize", "Description", "MD5"};
+
 fs::path get_tracker_file_path(const std::string& filename) {
     return tracker_dir / (filename + ".track");
 }

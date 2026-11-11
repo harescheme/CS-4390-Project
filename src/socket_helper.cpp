@@ -18,6 +18,10 @@ int socket_reader::read_line(std::string& line) {
         if (bytes_read < 0) {
             return bytes_read;
         }
+        if (bytes_read == 0) {
+            // End of stream
+            return -1;
+        }
     }
 }
 
