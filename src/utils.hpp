@@ -1,6 +1,7 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#include <chrono>
 #include <iomanip>
 #include <sstream>
 #include <string>
@@ -39,6 +40,12 @@ std::string md5(const std::string& str) {
         ss << std::hex << std::setw(2) << std::setfill('0') << (int)hash[i];
     }
     return ss.str();
+}
+
+long long current_timestamp() {
+    return std::chrono::duration_cast<std::chrono::seconds>(
+        std::chrono::system_clock::now().time_since_epoch()
+    ).count();
 }
 
 #endif
