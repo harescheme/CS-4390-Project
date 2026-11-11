@@ -12,9 +12,40 @@ void download_file(int connfd /*, some other parameters */) {
 	// TODO implement, set parameters
 }
 
+/*
+	This is probably wrong
+	but we have so far:
+create socket
+bind first half of socket
+connect other half of socket to tracker
+write to tracker
+read response from tracker
+	what we don't have:
+create socket 
+connect socket to yourself
+connect socket to peer using response from tracker
+write to peer asking for file
+read from peer
+convert it to a file?
+
+	keep in mind:
+convert to host or network byte order
+error handling for everything
+*/
+/*
+QUESTIONS
+shouldn't we be returning -1 instead of 1?
+are the sockets IPv6 and IPv4 compatible
+do we need error handling for setsockopt?
+do we need functionality in this code to send a file?
+how do I test the code?
+*/
+
 int main(int argc, char *argv[]) {
    	// TODO change to configuration file
 	// Address of tracker server
+	// if argc > ? then error
+	
     int port = 3490;
     std::string ip_addr = "0.0.0.0";
 
@@ -23,7 +54,7 @@ int main(int argc, char *argv[]) {
     int fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (fd < 0) {
 		std::cerr << "socket() failed" << std::endl;
-		return 1;
+		return 1; 
 	}
 
     // bind
@@ -35,6 +66,7 @@ int main(int argc, char *argv[]) {
     addr.sin_port = htons(port);
     if (!inet_aton(ip_addr.c_str(), &addr.sin_addr)) {
         std::cerr << "Invalid IP address given" << std::endl;
+		//do we need to close the socket before returning?
         return 1;
     }
     
@@ -60,6 +92,8 @@ int main(int argc, char *argv[]) {
 		close(sockid);
 		printf("Connection closed\n");
 	    exit(0);
+
+		
 	}//end close
 
 
