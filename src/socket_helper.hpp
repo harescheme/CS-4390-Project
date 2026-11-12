@@ -4,6 +4,8 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
+#include <cstring>
+#include <algorithm>
 
 #include <unistd.h>
 #include <arpa/inet.h>
@@ -25,6 +27,7 @@ public:
     socket_reader(int connfd);
     int read_line(std::string& line);
     int refresh_buffer();
+    int read_data(char* out, size_t n);
 };
 
 class socket_writer {

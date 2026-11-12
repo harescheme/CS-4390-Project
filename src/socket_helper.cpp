@@ -36,6 +36,17 @@ int socket_reader::refresh_buffer() {
     return buffer_bytes;
 }
 
+int socket_reader::read_data(char* out, size_t n) {
+    size_t got = 0;
+    while (got < n) {
+        if (buffer_index >= buffer_bytes && refresh_buffer() <= 0) return -1;
+        size_t take = std::min(n - got, (size_t)(buffer_bytes-buffer_index));
+        std::memcpy(out + got, buffer + buffer_index, take);
+        buffer_index += take;
+        got += take;
+    }
+    return 0;
+}
 
 socket_writer::socket_writer(int connfd) : connfd(connfd) {}
 
@@ -58,3 +69,4 @@ int socket_writer::flush() {
     buffer.clear();
     return 0;
 }
+
