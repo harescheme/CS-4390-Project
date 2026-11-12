@@ -283,7 +283,7 @@ int main() {
 
     std::cout << "Commands: REQ LIST | GET <file>.track | createtracker ... | updatetracker ... | quit" << std::endl;
     std::string line;
-    while (std::getline(std::cin, line)) {
+    while (std::cout << "> " && std::getline(std::cin, line)) {
         line = trim(line);
         if (line.empty()) continue;
         if (line == "quit") break;
