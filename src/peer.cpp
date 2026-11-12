@@ -20,7 +20,6 @@ constexpr size_t MAX_CHUNK_SIZE = 1024;
 void download_file(int connfd /*, some other parameters */) {
     // TODO implement, set parameters
 }
-
 // -- server --
 
 static void send_peer_reply(int connfd, const std::string &message) {
@@ -165,6 +164,38 @@ static int send_to_tracker(const std::string &request) {
 
     if (connect(fd, (const sockaddr *) &addr, sizeof(addr))) {
         std::cerr << "connect() to tracker " << config.tracker_ip << ":" << config.tracker_port << " failed" <<
+                std::endl;
+        close(fd);
+        return -1;
+    }
+
+    socket_writer writer(fd);
+    writer << "<" + request + ">" << '\n';
+    if (writer.flush()) {
+        std::cerr << "Failed to send request" << std::endl;
+        close(fd);
+        return -1;
+    }
+    return fd;
+}
+static int send_to_peers(const std::string &request, const std::string &serverIP,const std::string &serverPort) {
+    int fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (fd < 0) {
+        std::cerr << "socket() failed" << std::endl;
+        return -1;
+    }
+
+    sockaddr_in addr{};
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(serverPort); // change this
+    if (!inet_aton(serverIP, &addr.sin_addr)) {
+        std::cerr << "Invalid IP address given" << std::endl;
+        close(fd);
+        return -1;
+    }
+
+    if (connect(fd, (const sockaddr *) &addr, sizeof(addr))) {
+        std::cerr << "connect() to peer " << serverIP << ":" << serverPort << " failed" <<
                 std::endl;
         close(fd);
         return -1;
