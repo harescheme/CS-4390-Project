@@ -145,7 +145,7 @@ std::vector<tracker_file> list_tracker_files() {
     for (const auto& entry : fs::directory_iterator(tracker_dir)) {
         if (entry.is_regular_file() && entry.path().extension() == ".track") {
             tracker_file tfile;
-            if (read_tracker_file(entry.path().filename().string(), tfile)) {
+            if (read_tracker_file(entry.path().stem().string(), tfile)) {
                 files.push_back(tfile);
             }
         }

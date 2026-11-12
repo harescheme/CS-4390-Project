@@ -179,7 +179,7 @@ static int send_to_tracker(const std::string &request) {
     return fd;
 }
 
-static int send_to_peers(const std::string &request, const std::string &serverIP,const std::string &serverPort) {
+static int send_to_peers(const std::string &request, const std::string &serverIP, int serverPort) {
     int fd = socket(AF_INET, SOCK_STREAM, 0);
     if (fd < 0) {
         std::cerr << "socket() failed" << std::endl;
@@ -189,7 +189,7 @@ static int send_to_peers(const std::string &request, const std::string &serverIP
     sockaddr_in addr{};
     addr.sin_family = AF_INET;
     addr.sin_port = htons(serverPort); // change this
-    if (!inet_aton(serverIP, &addr.sin_addr)) {
+    if (!inet_aton(serverIP.c_str(), &addr.sin_addr)) {
         std::cerr << "Invalid IP address given" << std::endl;
         close(fd);
         return -1;
